@@ -1,9 +1,10 @@
-# Jetson AGX Thor get start
+# Jetson AGX Thor USB 開機安裝與 VNC 開啟教學
 
 這份文件整理 NVIDIA Jetson AGX Thor Developer Kit 的兩個常用設定：
 
 1. 使用 USB 隨身碟開機並安裝 Jetson BSP / Jetson Linux
-2. 開啟 VNC，從另一台電腦遠端操作 Thor 桌面
+2. 開啟 SSH，從另一台電腦登入 Thor
+3. 開啟 VNC，從另一台電腦遠端操作 Thor 桌面
 
 參考來源：
 
@@ -132,7 +133,93 @@ Y
 
 完成後即可登入 Jetson Linux。
 
-## 10. 開啟 VNC
+## 10. 開啟 SSH
+
+完成 Jetson Linux 第一次開機設定後，建議先確認 SSH 可以使用。之後設定 VNC、安裝 Python 環境或管理 Thor，都可以直接從另一台電腦 SSH 進去操作。
+
+### 確認 SSH server 是否已安裝
+
+在 Thor 上執行：
+
+```bash
+sudo systemctl status ssh
+```
+
+如果看到 `active (running)`，代表 SSH server 已經啟動。
+
+如果顯示找不到服務或尚未安裝，執行：
+
+```bash
+sudo apt update
+sudo apt install -y openssh-server
+```
+
+### 啟用並啟動 SSH
+
+```bash
+sudo systemctl enable ssh
+sudo systemctl start ssh
+```
+
+再次確認：
+
+```bash
+sudo systemctl status ssh
+```
+
+### 查詢 Thor IP
+
+```bash
+hostname -I
+```
+
+或：
+
+```bash
+ip addr
+```
+
+假設查到 IP 是：
+
+```text
+10.0.1.61
+```
+
+### 從另一台電腦 SSH 連線
+
+在 Windows PowerShell、Windows Terminal、macOS Terminal 或 Linux terminal 執行：
+
+```bash
+ssh <username>@<Thor_IP>
+```
+
+例如：
+
+```bash
+ssh aimlab-thor@10.0.1.61
+```
+
+第一次連線時，會出現 host key 確認訊息，輸入：
+
+```text
+yes
+```
+
+接著輸入 Thor 使用者密碼即可登入。
+
+如果 SSH 連不上，先確認：
+
+```bash
+ping 10.0.1.61
+```
+
+以及 Thor 上 SSH 是否啟動：
+
+```bash
+sudo systemctl status ssh
+```
+
+## 11. 開啟 VNC
 
 VNC 可以讓同一個網路內的另一台電腦遠端操作 Thor 桌面。
 
@@ -143,7 +230,7 @@ VNC 可以讓同一個網路內的另一台電腦遠端操作 Thor 桌面。
 - NVIDIA 官方 VNC 教學使用 GNOME 的 Vino server
 - VNC server 通常需要使用者已在 Thor 本機桌面登入後才會啟動
 
-## 11. 啟用 VNC Server
+## 12. 啟用 VNC Server
 
 在 Thor 上執行：
 
@@ -172,7 +259,7 @@ gsettings set org.gnome.Vino vnc-password $(echo -n 'your_password' | base64)
 sudo reboot
 ```
 
-## 12. 查詢 Thor IP
+## 13. 查詢 Thor IP
 
 重新開機並登入桌面後，查詢 Thor 的 IP：
 
@@ -198,7 +285,7 @@ hostname -I
 10.0.1.61
 ```
 
-## 13. 從 Windows 連線 VNC
+## 14. 從 Windows 連線 VNC
 
 在 Windows 安裝 VNC Viewer，例如 RealVNC Viewer：
 
@@ -212,7 +299,7 @@ https://www.realvnc.com/en/connect/download/viewer/
 
 如果有設定密碼，輸入前面設定的 VNC password。
 
-## 14. 從 Linux 連線 VNC
+## 15. 從 Linux 連線 VNC
 
 可以使用 `gvncviewer`：
 
@@ -226,7 +313,7 @@ gvncviewer
 
 也可以使用 Remmina。
 
-## 15. 從 macOS 連線 VNC
+## 16. 從 macOS 連線 VNC
 
 macOS 內建 Screen Sharing。
 
@@ -244,7 +331,7 @@ Go -> Go to Folder
 
 開啟 `Screen Sharing`，輸入 Thor IP 連線。
 
-## 16. 常見問題
+## 17. 常見問題
 
 ### VNC 連不上
 
@@ -289,7 +376,7 @@ x11vnc -display :0 -auth guess -forever -loop -noxdamage -shared -rfbport 5900
 <Thor_IP>:5900
 ```
 
-## 17. 建議流程總結
+## 18. 建議流程總結
 
 第一次安裝 Thor：
 
@@ -301,5 +388,7 @@ x11vnc -display :0 -auth guess -forever -loop -noxdamage -shared -rfbport 5900
 6. 安裝完成後拔掉 USB
 7. 從 NVMe 開機並完成 `oem-config`
 8. 登入桌面
-9. 設定 VNC
-10. 從 Windows / macOS / Linux 用 VNC Viewer 連線
+9. 開啟 SSH
+10. 從另一台電腦 SSH 登入 Thor
+11. 設定 VNC
+12. 從 Windows / macOS / Linux 用 VNC Viewer 連線
