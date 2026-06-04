@@ -1,4 +1,4 @@
-# Jetson AGX Thor USB 開機安裝與 VNC 開啟教學
+# Jetson AGX Thor get start
 
 這份文件整理 NVIDIA Jetson AGX Thor Developer Kit 的兩個常用設定：
 
