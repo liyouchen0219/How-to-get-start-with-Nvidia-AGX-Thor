@@ -376,7 +376,114 @@ x11vnc -display :0 -auth guess -forever -loop -noxdamage -shared -rfbport 5900
 <Thor_IP>:5900
 ```
 
-## 18. 建議流程總結
+## 18. 安裝 Conda 與 Thor 專用 PyTorch
+
+完成 USB 安裝、SSH 與 VNC 後，通常下一步就是建立 Python / PyTorch 開發環境。
+
+Jetson AGX Thor 建議使用：
+
+- Conda：Miniforge ARM64
+- 環境名稱：`li`
+- Python：3.12
+- PyTorch：CUDA 13 wheel
+
+注意：不建議用 Python 3.10 安裝 Thor GPU PyTorch。Thor 對應的 CUDA 13 PyTorch wheel 主要支援 Python 3.12。
+
+### 安裝 Miniforge
+
+```bash
+cd ~
+wget -O Miniforge3-Linux-aarch64.sh \
+  https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
+
+bash Miniforge3-Linux-aarch64.sh -b -p ~/miniforge3
+
+source ~/miniforge3/etc/profile.d/conda.sh
+conda init bash
+conda config --set auto_activate_base false
+```
+
+重新載入 shell：
+
+```bash
+source ~/.bashrc
+```
+
+或關掉 SSH 後重新登入。
+
+### 建立 Conda 環境
+
+```bash
+conda create -y -n li python=3.12 pip
+conda activate li
+```
+
+確認目前 Python 來自 `li`：
+
+```bash
+which python
+python --version
+```
+
+正常應該看到：
+
+```text
+/home/<username>/miniforge3/envs/li/bin/python
+Python 3.12.x
+```
+
+### 安裝 Thor 專用 PyTorch
+
+```bash
+pip install -U pip wheel
+
+pip install --no-cache-dir torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu130
+```
+
+### 設定 CUDA 13 環境變數
+
+```bash
+mkdir -p "$CONDA_PREFIX/etc/conda/activate.d"
+
+cat > "$CONDA_PREFIX/etc/conda/activate.d/thor_cuda.sh" <<'EOF'
+export CUDA_HOME=/usr/local/cuda-13.0
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-13.0/targets/sbsa-linux/lib:/usr/lib/aarch64-linux-gnu/libcudss/13:${LD_LIBRARY_PATH:-}
+export TRITON_PTXAS_PATH=/usr/local/cuda-13.0/bin/ptxas
+EOF
+```
+
+重新啟用環境：
+
+```bash
+conda deactivate
+conda activate li
+```
+
+### 測試 PyTorch
+
+```bash
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0)); print(torch.cuda.get_device_capability(0)); x=torch.ones((1024,1024),device='cuda'); y=x@x; torch.cuda.synchronize(); print(y[0,0].item())"
+```
+
+正常輸出應該類似：
+
+```text
+2.12.0+cu130
+True
+NVIDIA Thor
+(11, 0)
+1024.0
+```
+
+如果遇到 PyTorch 或 Conda 問題，可以參考另一份完整環境文件：
+
+```text
+JETSON_THOR_PYTORCH_SETUP.md
+```
+
+## 19. 建議流程總結
 
 第一次安裝 Thor：
 
@@ -392,3 +499,6 @@ x11vnc -display :0 -auth guess -forever -loop -noxdamage -shared -rfbport 5900
 10. 從另一台電腦 SSH 登入 Thor
 11. 設定 VNC
 12. 從 Windows / macOS / Linux 用 VNC Viewer 連線
+13. 建立 Conda 環境 `li`
+14. 安裝 Thor 專用 PyTorch
+15. 測試 PyTorch CUDA 是否可用
